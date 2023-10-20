@@ -11,4 +11,11 @@
     <PackageReference Include="Telegram.Bot" Version="19.0.0" />
   </ItemGroup>
 
+  <Target Name="LocalDatabase" AfterTargets="Publish">
+    <Copy SourceFiles="local_database.json" DestinationFolder="$(PublishDir)" />
+  </Target>
+  <Target Name="SettingsJson" AfterTargets="Publish">
+    <Copy SourceFiles="settings.json" DestinationFolder="$(PublishDir)" />
+  </Target>
+
 </Project>

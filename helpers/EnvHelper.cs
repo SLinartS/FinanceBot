@@ -14,7 +14,6 @@ class EnvHelper
     var envFile = JsonSerializer.Deserialize<Dictionary<EnvKeys, string>>(fs);
     if (envFile is not null)
     {
-      Console.WriteLine(envFile[key]);
       return envFile[key];
     }
     throw new Exception("Read setting file failed");
