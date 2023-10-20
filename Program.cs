@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Telegram.Bot;
+﻿using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -8,7 +7,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 class Program
 {
-  private static readonly TelegramBotClient botClient = new("6136093952:AAFY98biTwWb2Wa5S9iw3YEHoVPB8a9LwMA");
+  private static readonly TelegramBotClient botClient = new(EnvHelper.GetValue(EnvKeys.Token));
 
   static async Task Main(string[] args)
   {
