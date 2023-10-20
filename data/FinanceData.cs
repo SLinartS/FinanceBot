@@ -1,6 +1,9 @@
+using System.Text.Json.Serialization;
+
 class FinanceData
 {
-  public List<int> Operations = new();
-  public int CreditBalance = 0;
-  public int DebitBalance = 0;
+  public int CreditBalance { get; set; }
+  public int DebitBalance { get; set; }
+  public required List<FinanceOperation> CreditOperations { get; set; }
+  public required List<FinanceOperation> DebitOperations { get; set; }
 }

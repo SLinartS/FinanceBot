@@ -4,13 +4,14 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 class Program
 {
+  private static readonly TelegramBotClient botClient = new("6136093952:AAFY98biTwWb2Wa5S9iw3YEHoVPB8a9LwMA");
+
   static async Task Main(string[] args)
   {
-    var botClient = new TelegramBotClient("6136093952:AAFY98biTwWb2Wa5S9iw3YEHoVPB8a9LwMA");
-
     using CancellationTokenSource cts = new();
 
     ReceiverOptions receiverOptions = new()
@@ -48,38 +49,91 @@ class Program
     }
 
     var chatId = message.Chat.Id;
-    Console.WriteLine($"Received a '{messageText}' message in chat {chatId}.");
 
-    if (messageText.Length > 4 && messageText[..5] == "write")
+    if (State.IsEnteringOperation)
     {
-      using (FileStream fs = new("words.json", FileMode.OpenOrCreate))
+      if (int.TryParse(messageText, out int parsedNumber))
       {
-        Words words = new(messageText[6..]);
-        await JsonSerializer.SerializeAsync(fs, words);
-        Console.WriteLine("Data has been saved to file");
-      }
+        switch (State.OperationType)
+        {
+          case OperationType.AddCreditOperation:
+            await DatabaseHelper.AddCreditOperation(parsedNumber);
+            break;
+          case OperationType.AddDebitOperation:
+            await DatabaseHelper.AddDebitOperation(parsedNumber);
+            break;
+          case OperationType.ChangeCreditBalance:
+            await DatabaseHelper.ChangeCreditBalance(parsedNumber);
+            break;
+          case OperationType.ChangeDebitBalance:
+            await DatabaseHelper.ChangeDebitBalance(parsedNumber);
+            break;
 
-      // Echo received message text
-      Message sentMessage = await botClient.SendTextMessageAsync(
-          chatId: chatId,
-          text: "You write:\n" + messageText[6..],
-          cancellationToken: cancellationToken);
+          default:
+            ReturnDefaultMenu(chatId, cancellationToken);
+            break;
+        }
+        State.IsEnteringOperation = false;
+      }
     }
 
-    if (messageText.Length == 4 && messageText[..4] == "read")
+    State.IsEnteringOperation = true;
+    switch (messageText)
     {
-      using (FileStream fs = new("words.json", FileMode.OpenOrCreate))
-      {
-        Words? words = await JsonSerializer.DeserializeAsync<Words>(fs);
+      case "Добавить операцию по кредитке":
+        State.OperationType = OperationType.AddCreditOperation;
+        ReturnSimpleText("Введите операцию по кредитке:", chatId, cancellationToken);
+        break;
+      case "Добавить операцию по дебетовой карте":
+        State.OperationType = OperationType.AddDebitOperation;
+        ReturnSimpleText("Введите операцию по дебетовой карте:", chatId, cancellationToken);
+        break;
+      case "Установить начальный баланс кредитки":
+        State.OperationType = OperationType.ChangeCreditBalance;
+        ReturnSimpleText("Укажите начальный баланс кредитки:", chatId, cancellationToken);
+        break;
+      case "Установить начальный баланс дебетовой карты":
+        State.OperationType = OperationType.ChangeDebitBalance;
+        ReturnSimpleText("Укажите начальный баланс дебетовой карты:", chatId, cancellationToken);
+        break;
+      default:
+        State.IsEnteringOperation = false;
+        ReturnDefaultMenu(chatId, cancellationToken);
+        break;
+    }
+    var financeData = await DatabaseHelper.GetFinanceInformation();
+    string returnedText = string.Concat
+    (
+    $"Текущий баланс кредитки: {financeData.CreditBalance} \n",
+    $"Текущий баланс дебетовой карты: {financeData.DebitBalance}"
+    );
+    ReturnSimpleText(returnedText, chatId, cancellationToken);
+  }
 
-        Message sentMessage = await botClient.SendTextMessageAsync(
+  static async void ReturnDefaultMenu(long chatId, CancellationToken cancellationToken)
+  {
+    ReplyKeyboardMarkup replyKeyboardMarkup = new(new[]{
+          new KeyboardButton[] { "Добавить операцию по кредитке", "Добавить операцию по дебетовой карте" },
+          new KeyboardButton[] { "Установить начальный баланс кредитки", "Установить начальный баланс дебетовой карты" },
+        })
+    {
+      ResizeKeyboard = true
+    };
+
+    // Echo received message text
+    await botClient.SendTextMessageAsync(
         chatId: chatId,
-        text: "Your text is:\n" + words?.Messages,
+        text: "Выберите действие",
+        replyMarkup: replyKeyboardMarkup,
         cancellationToken: cancellationToken);
-      }
+  }
 
-    }
-
+  private static async void ReturnSimpleText(string message, long chatId, CancellationToken cancellationToken)
+  {
+    await botClient.SendTextMessageAsync(
+                chatId: chatId,
+                text: message,
+                cancellationToken: cancellationToken);
   }
 
   static Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)

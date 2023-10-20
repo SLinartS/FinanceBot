@@ -1,0 +1,1 @@
+{"CreditBalance":0,"DebitBalance":0,"CreditOperations":[{"Date":"20.10.2023 15:00","Value":0},{"Date":"20.10.2023 22:05","Value":100},{"Date":"20.10.2023 22:08","Value":100},{"Date":"20.10.2023 22:08","Value":100}],"DebitOperations":[{"Date":"20.10.2023 15:00","Value":0},{"Date":"20.10.2023 22:08","Value":-100}]}
