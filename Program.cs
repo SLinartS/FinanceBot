@@ -15,7 +15,7 @@ class Program
 
     ReceiverOptions receiverOptions = new()
     {
-      AllowedUpdates = Array.Empty<UpdateType>() // receive all update types except ChatMember related updates
+      AllowedUpdates = Array.Empty<UpdateType>()
     };
 
     botClient.StartReceiving(
@@ -35,91 +35,88 @@ class Program
 
   static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
   {
-    // Only process Message updates: https://core.telegram.org/bots/api#message
-    if (update.Message is not { } message)
-    {
-      return;
-    }
+    if (update.Message is not { } message) { return; }
+    if (message.Text is not { } messageText) { return; }
 
-    // Only process text messages
-    if (message.Text is not { } messageText)
-    {
-      return;
-    }
-
-    var chatId = message.Chat.Id;
+    long chatId = message.Chat.Id;
 
     if (State.IsEnteringOperation)
     {
-      if (int.TryParse(messageText, out int parsedNumber))
-      {
-        switch (State.OperationType)
-        {
-          case OperationType.AddCreditOperation:
-            await DatabaseHelper.AddCreditOperation(parsedNumber);
-            break;
-          case OperationType.AddDebitOperation:
-            await DatabaseHelper.AddDebitOperation(parsedNumber);
-            break;
-          case OperationType.ChangeCreditBalance:
-            await DatabaseHelper.ChangeCreditBalance(parsedNumber);
-            break;
-          case OperationType.ChangeDebitBalance:
-            await DatabaseHelper.ChangeDebitBalance(parsedNumber);
-            break;
+      if (!int.TryParse(messageText, out int parsedNumber)) { return; }
 
-          default:
-            ReturnDefaultMenu(chatId, cancellationToken);
-            break;
-        }
-        State.IsEnteringOperation = false;
+      switch (State.OperationType)
+      {
+        case OperationType.AddCreditOperation:
+          await DatabaseHelper.AddCreditOperation(parsedNumber);
+          break;
+        case OperationType.AddDebitOperation:
+          await DatabaseHelper.AddDebitOperation(parsedNumber);
+          break;
+        case OperationType.ChangeCreditBalance:
+          await DatabaseHelper.ChangeCreditBalance(parsedNumber);
+          break;
+        case OperationType.ChangeDebitBalance:
+          await DatabaseHelper.ChangeDebitBalance(parsedNumber);
+          break;
+        default:
+          ReturnDefaultMenu(chatId, cancellationToken);
+          break;
       }
     }
 
     State.IsEnteringOperation = true;
     switch (messageText)
     {
-      case "Добавить операцию по кредитке":
+      case "Опер. по кредитке":
         State.OperationType = OperationType.AddCreditOperation;
         ReturnSimpleText("Введите операцию по кредитке:", chatId, cancellationToken);
         break;
-      case "Добавить операцию по дебетовой карте":
+      case "Опер. по счёту":
         State.OperationType = OperationType.AddDebitOperation;
         ReturnSimpleText("Введите операцию по дебетовой карте:", chatId, cancellationToken);
         break;
-      case "Установить начальный баланс кредитки":
+      case "Уст. нач. баланс кредитки":
         State.OperationType = OperationType.ChangeCreditBalance;
         ReturnSimpleText("Укажите начальный баланс кредитки:", chatId, cancellationToken);
         break;
-      case "Установить начальный баланс дебетовой карты":
+      case "Уст. нач. баланс счёта":
         State.OperationType = OperationType.ChangeDebitBalance;
         ReturnSimpleText("Укажите начальный баланс дебетовой карты:", chatId, cancellationToken);
+        break;
+      case "Информация по счёту":
+        State.IsEnteringOperation = false;
+        var financeData = await DatabaseHelper.GetFinanceInformation();
+        int daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+        int currentDay = DateTime.Now.Day;
+        int daysBeforePayday = daysInMonth - currentDay + 10;
+        int remainingMoney = financeData.DebitBalance - (financeData.CreditLimit - financeData.CreditBalance);
+        string returnedText = string.Concat
+        (
+          $"Баланс кредитки: {financeData.CreditBalance} ₽ \n",
+          $"Баланс счёта: {financeData.DebitBalance} ₽ \n",
+          $"ИТОГ: {remainingMoney} ₽\n",
+          $"Денег на день: {remainingMoney / daysBeforePayday} ₽"
+        );
+        ReturnSimpleText(returnedText, chatId, cancellationToken);
         break;
       default:
         State.IsEnteringOperation = false;
         ReturnDefaultMenu(chatId, cancellationToken);
         break;
     }
-    var financeData = await DatabaseHelper.GetFinanceInformation();
-    string returnedText = string.Concat
-    (
-    $"Текущий баланс кредитки: {financeData.CreditBalance} \n",
-    $"Текущий баланс дебетовой карты: {financeData.DebitBalance}"
-    );
-    ReturnSimpleText(returnedText, chatId, cancellationToken);
   }
 
   static async void ReturnDefaultMenu(long chatId, CancellationToken cancellationToken)
   {
     ReplyKeyboardMarkup replyKeyboardMarkup = new(new[]{
-          new KeyboardButton[] { "Добавить операцию по кредитке", "Добавить операцию по дебетовой карте" },
-          new KeyboardButton[] { "Установить начальный баланс кредитки", "Установить начальный баланс дебетовой карты" },
+          new KeyboardButton[] { "Информация по счёту" },
+          new KeyboardButton[] { "Опер. по кредитке", "Опер. по счёту" },
+          new KeyboardButton[] { "Уст. нач. баланс кредитки", "Уст. нач. баланс счёта" },
         })
     {
       ResizeKeyboard = true
     };
 
-    // Echo received message text
     await botClient.SendTextMessageAsync(
         chatId: chatId,
         text: "Выберите действие",
