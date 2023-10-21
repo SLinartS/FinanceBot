@@ -3,6 +3,7 @@ using System.Text.Json;
 enum EnvKeys
 {
   Token,
+  UserID
 }
 
 class EnvHelper

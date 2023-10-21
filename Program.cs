@@ -40,6 +40,12 @@ class Program
 
     long chatId = message.Chat.Id;
 
+    if (message.From!.Id.ToString() != EnvHelper.GetValue(EnvKeys.UserID))
+    {
+      ReturnSimpleText("ОШИБКА! Неверный ID Пользователя", chatId, cancellationToken);
+      return;
+    }
+
     if (State.IsEnteringOperation)
     {
       if (!int.TryParse(messageText, out int parsedNumber)) { return; }
@@ -81,7 +87,7 @@ class Program
         break;
       case "Уст. нач. баланс счёта":
         State.OperationType = OperationType.ChangeDebitBalance;
-        ReturnSimpleText("Укажите начальный баланс дебетовой карты:", chatId, cancellationToken);
+        ReturnSimpleText("Укажите начальный баланс счёта:", chatId, cancellationToken);
         break;
       case "Информация по счёту":
         State.IsEnteringOperation = false;
