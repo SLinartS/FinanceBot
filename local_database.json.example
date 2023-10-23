@@ -2,6 +2,6 @@
   "CreditLimit": 0,
   "CreditBalance": 0,
   "DebitBalance": 0,
-  "CreditOperations": [{ "Date": "01.01.2000 00:00", "Value": 0 }],
-  "DebitOperations": [{ "Date": "01.01.2000 00:00", "Value": 0 }]
+  "CreditOperations": [{ "Date": "01.01.2000 00:00", "Value": 0, "Description": "Мороженное" }],
+  "DebitOperations": [{ "Date": "01.01.2000 00:00", "Value": 0, "Description": "" }]
 }

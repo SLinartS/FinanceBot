@@ -3,7 +3,7 @@ enum OperationType
   AddCreditOperation,
   AddDebitOperation,
   ChangeCreditBalance,
-  ChangeDebitBalance
+  ChangeDebitBalance,
 }
 
 static class State

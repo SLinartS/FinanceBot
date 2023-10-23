@@ -48,15 +48,19 @@ class Program
 
     if (State.IsEnteringOperation)
     {
-      if (!int.TryParse(messageText, out int parsedNumber)) { return; }
+      string[] parsedMessage = StringAnalyserHelper.GetParsedString(messageText);
+
+      string description = parsedMessage.Length > 1 ? parsedMessage[1] : "";
+
+      if (!int.TryParse(parsedMessage[0], out int parsedNumber)) { return; }
 
       switch (State.OperationType)
       {
         case OperationType.AddCreditOperation:
-          await DatabaseHelper.AddCreditOperation(parsedNumber);
+          await DatabaseHelper.AddCreditOperation(parsedNumber, description);
           break;
         case OperationType.AddDebitOperation:
-          await DatabaseHelper.AddDebitOperation(parsedNumber);
+          await DatabaseHelper.AddDebitOperation(parsedNumber, description);
           break;
         case OperationType.ChangeCreditBalance:
           await DatabaseHelper.ChangeCreditBalance(parsedNumber);
@@ -71,6 +75,7 @@ class Program
     }
 
     State.IsEnteringOperation = true;
+    string returnedText;
     switch (messageText)
     {
       case "Опер. по кредитке":
@@ -79,7 +84,7 @@ class Program
         break;
       case "Опер. по счёту":
         State.OperationType = OperationType.AddDebitOperation;
-        ReturnSimpleText("Введите операцию по дебетовой карте:", chatId, cancellationToken);
+        ReturnSimpleText("Введите операцию по счёту:", chatId, cancellationToken);
         break;
       case "Уст. нач. баланс кредитки":
         State.OperationType = OperationType.ChangeCreditBalance;
@@ -89,20 +94,19 @@ class Program
         State.OperationType = OperationType.ChangeDebitBalance;
         ReturnSimpleText("Укажите начальный баланс счёта:", chatId, cancellationToken);
         break;
+      case "Последние операции по кредитке":
+        State.IsEnteringOperation = false;
+        returnedText = await CalculationHelper.GetLastCreditOperations();
+        ReturnSimpleText(returnedText, chatId, cancellationToken);
+        break;
+      case "Последние операции по счёту":
+        State.IsEnteringOperation = false;
+        returnedText = await CalculationHelper.GetLastDebitOperations();
+        ReturnSimpleText(returnedText, chatId, cancellationToken);
+        break;
       case "Информация по счёту":
         State.IsEnteringOperation = false;
-        var financeData = await DatabaseHelper.GetFinanceInformation();
-        int daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
-        int currentDay = DateTime.Now.Day;
-        int daysBeforePayday = daysInMonth - currentDay + 10;
-        int remainingMoney = financeData.DebitBalance - (financeData.CreditLimit - financeData.CreditBalance);
-        string returnedText = string.Concat
-        (
-          $"Баланс кредитки: {financeData.CreditBalance} ₽ \n",
-          $"Баланс счёта: {financeData.DebitBalance} ₽ \n",
-          $"ИТОГ: {remainingMoney} ₽\n",
-          $"Денег на день: {remainingMoney / daysBeforePayday} ₽"
-        );
+        returnedText = await CalculationHelper.GetFinanceInformation();
         ReturnSimpleText(returnedText, chatId, cancellationToken);
         break;
       default:
@@ -118,6 +122,7 @@ class Program
           new KeyboardButton[] { "Информация по счёту" },
           new KeyboardButton[] { "Опер. по кредитке", "Опер. по счёту" },
           new KeyboardButton[] { "Уст. нач. баланс кредитки", "Уст. нач. баланс счёта" },
+          new KeyboardButton[] { "Последние операции по кредитке", "Последние операции по счёту" },
         })
     {
       ResizeKeyboard = true

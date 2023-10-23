@@ -15,20 +15,20 @@ class DatabaseHelper
     }
     return financeData;
   }
-  public async static Task<bool> AddCreditOperation(int operation)
+  public async static Task<bool> AddCreditOperation(int operation, string description = "")
   {
     var financeData = await ReadFile();
     string currentDateTime = TimeHelper.GetCurrentDateTime();
-    financeData.CreditOperations.Add(new FinanceOperation(currentDateTime, operation));
+    financeData.CreditOperations.Add(new FinanceOperation(currentDateTime, operation, description));
     WriteFile(financeData);
     return true;
 
   }
-  public async static Task<bool> AddDebitOperation(int operation)
+  public async static Task<bool> AddDebitOperation(int operation, string description = "")
   {
     var financeData = await ReadFile();
     string currentDateTime = TimeHelper.GetCurrentDateTime();
-    financeData.DebitOperations.Add(new FinanceOperation(currentDateTime, operation));
+    financeData.DebitOperations.Add(new FinanceOperation(currentDateTime, operation, description));
     WriteFile(financeData);
     return true;
 
