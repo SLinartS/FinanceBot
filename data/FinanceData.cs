@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 class FinanceData
 {
+  public int InterestRate { get; set; }
   public int CreditLimit { get; set; }
   public int CreditBalance { get; set; }
   public int DebitBalance { get; set; }

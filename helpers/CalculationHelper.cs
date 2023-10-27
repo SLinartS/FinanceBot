@@ -9,7 +9,7 @@ class CalculationHelper
     int remainingMoney = financeData.DebitBalance - (financeData.CreditLimit - financeData.CreditBalance);
     int moneyForDay = remainingMoney / daysBeforePayday;
     int impactOfHundreds = moneyForDay - ((remainingMoney - 100) / daysBeforePayday);
-    string returnedText = string.Concat
+    return string.Concat
     (
       $"Баланс кредитки: {financeData.CreditBalance} ₽ \n",
       $"Баланс счёта: {financeData.DebitBalance} ₽ \n",
@@ -17,28 +17,31 @@ class CalculationHelper
       new string('-', 25) + "\n",
       $"Денег на день: {moneyForDay} ₽\n",
       $"Влияние 100₽: {impactOfHundreds} ₽\n",
-      $"Дней до зарплаты: {daysBeforePayday}\n"
+      $"Дней до зарплаты: {daysBeforePayday}\n",
+      new string('-', 25) + "\n",
+      $"Ежедневные проценты: {financeData.DebitBalance * financeData.InterestRate / 36000} ₽\n",
+      $"Ежемесячные проценты: {financeData.DebitBalance * financeData.InterestRate / 1200} ₽\n",
+      $"Годовой процент: {financeData.DebitBalance * financeData.InterestRate / 100} ₽\n",
+      new string('-', 25) + "\n",
+      $"Текущая ставка по счёту: {financeData.InterestRate} %\n"
     );
-    return returnedText;
   }
   public async static Task<string> GetLastCreditOperations()
   {
     var financeData = await DatabaseHelper.GetFinanceInformation();
-    string returnedText = "";
-
-    foreach (FinanceOperation operation in financeData.CreditOperations)
-    {
-      returnedText += $"{operation.Date} | {operation.Value} ₽ | {operation.Description} \n";
-    }
-
-    return returnedText;
+    return GetOperations(financeData.CreditOperations);
   }
   public async static Task<string> GetLastDebitOperations()
   {
     var financeData = await DatabaseHelper.GetFinanceInformation();
+    return GetOperations(financeData.DebitOperations);
+  }
+
+  private static string GetOperations(List<FinanceOperation> operations)
+  {
     string returnedText = "";
 
-    foreach (FinanceOperation operation in financeData.DebitOperations)
+    foreach (FinanceOperation operation in operations.GetRange(operations.Count - 10, 10))
     {
       returnedText += $"{operation.Date} | {operation.Value} ₽ | {operation.Description} \n";
     }

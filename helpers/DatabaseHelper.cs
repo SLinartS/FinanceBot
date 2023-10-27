@@ -47,7 +47,13 @@ class DatabaseHelper
     financeData.DebitBalance = newBalance;
     WriteFile(financeData);
     return true;
-
+  }
+  public async static Task<bool> ChangeInterestRate(int newRate)
+  {
+    var financeData = await ReadFile();
+    financeData.InterestRate = newRate;
+    WriteFile(financeData);
+    return true;
   }
   private async static Task<FinanceData> ReadFile()
   {

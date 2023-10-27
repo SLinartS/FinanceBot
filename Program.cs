@@ -52,7 +52,11 @@ class Program
 
       string description = parsedMessage.Length > 1 ? parsedMessage[1] : "";
 
-      if (!int.TryParse(parsedMessage[0], out int parsedNumber)) { return; }
+      if (!int.TryParse(parsedMessage[0], out int parsedNumber))
+      {
+        ReturnDefaultMenu(chatId, cancellationToken, "Введите число");
+        return;
+      }
 
       switch (State.OperationType)
       {
@@ -68,8 +72,11 @@ class Program
         case OperationType.ChangeDebitBalance:
           await DatabaseHelper.ChangeDebitBalance(parsedNumber);
           break;
+        case OperationType.ChangeInterestRate:
+          await DatabaseHelper.ChangeInterestRate(parsedNumber);
+          break;
         default:
-          ReturnDefaultMenu(chatId, cancellationToken);
+          ReturnDefaultMenu(chatId, cancellationToken, "Неверный тип операции");
           break;
       }
     }
@@ -94,6 +101,10 @@ class Program
         State.OperationType = OperationType.ChangeDebitBalance;
         ReturnSimpleText("Укажите начальный баланс счёта:", chatId, cancellationToken);
         break;
+      case "Изменить процентную ставку":
+        State.OperationType = OperationType.ChangeInterestRate;
+        ReturnSimpleText("Новое значение процентной ставки:", chatId, cancellationToken);
+        break;
       case "Последние операции по кредитке":
         State.IsEnteringOperation = false;
         returnedText = await CalculationHelper.GetLastCreditOperations();
@@ -116,13 +127,15 @@ class Program
     }
   }
 
-  static async void ReturnDefaultMenu(long chatId, CancellationToken cancellationToken)
+  static async void ReturnDefaultMenu(long chatId, CancellationToken cancellationToken, string errorMessage = "")
   {
+    State.IsEnteringOperation = false;
     ReplyKeyboardMarkup replyKeyboardMarkup = new(new[]{
           new KeyboardButton[] { "Информация по счёту" },
           new KeyboardButton[] { "Опер. по кредитке", "Опер. по счёту" },
           new KeyboardButton[] { "Уст. нач. баланс кредитки", "Уст. нач. баланс счёта" },
           new KeyboardButton[] { "Последние операции по кредитке", "Последние операции по счёту" },
+          new KeyboardButton[] { "Изменить процентную ставку" },
         })
     {
       ResizeKeyboard = true
@@ -130,7 +143,7 @@ class Program
 
     await botClient.SendTextMessageAsync(
         chatId: chatId,
-        text: "Выберите действие",
+        text: errorMessage != "" ? $"{errorMessage}! Выберите действие" : $"Выберите действие",
         replyMarkup: replyKeyboardMarkup,
         cancellationToken: cancellationToken);
   }

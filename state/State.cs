@@ -1,5 +1,6 @@
 enum OperationType
 {
+  ChangeInterestRate,
   AddCreditOperation,
   AddDebitOperation,
   ChangeCreditBalance,
