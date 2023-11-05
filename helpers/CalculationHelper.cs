@@ -6,6 +6,11 @@ class CalculationHelper
     int daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
     int currentDay = DateTime.Now.Day;
     int daysBeforePayday = daysInMonth - currentDay + 10;
+    if (daysBeforePayday < 10)
+    {
+      daysBeforePayday = 10 - currentDay;
+    }
+
     int remainingMoney = financeData.DebitBalance - (financeData.CreditLimit - financeData.CreditBalance);
     int moneyForDay = remainingMoney / daysBeforePayday;
     int impactOfHundreds = moneyForDay - ((remainingMoney - 100) / daysBeforePayday);
