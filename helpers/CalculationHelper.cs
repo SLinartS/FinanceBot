@@ -6,11 +6,10 @@ class CalculationHelper
     int daysInMonth = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
     int currentDay = DateTime.Now.Day;
     int daysBeforePayday = daysInMonth - currentDay + 10;
-    if (daysBeforePayday < 10)
+    if (currentDay < 10)
     {
       daysBeforePayday = 10 - currentDay;
     }
-
     int remainingMoney = financeData.DebitBalance - (financeData.CreditLimit - financeData.CreditBalance);
     int moneyForDay = remainingMoney / daysBeforePayday;
     int impactOfHundreds = moneyForDay - ((remainingMoney - 100) / daysBeforePayday);
@@ -46,7 +45,14 @@ class CalculationHelper
   {
     string returnedText = "";
 
-    foreach (FinanceOperation operation in operations.GetRange(operations.Count - 10, 10))
+    var localOperations = operations;
+
+    if (operations.Count > 10)
+    {
+      localOperations = operations.GetRange(operations.Count - 10, 10);
+    }
+
+    foreach (FinanceOperation operation in localOperations)
     {
       returnedText += $"{operation.Date} | {operation.Value} ₽ | {operation.Description} \n";
     }
